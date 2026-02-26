@@ -6,7 +6,11 @@
   <title>Ink Unit Troubleshooter</title>
   <style>
     body{ margin:0; font-family: system-ui, Arial; }
-    .wrap{ display:grid; grid-template-columns: 1fr 420px; height:100vh; }
+    .wrap{
+  display:grid;
+  grid-template-columns: 1fr 420px;
+  height: calc(100vh - 64px);
+}
     .diagram{ position:relative; overflow:auto; background:#f4f4f4; }
     .imgWrap{ position:relative; display:inline-block; }
     img{ display:block; width:min(1200px, 100%); height:auto; }
@@ -47,10 +51,46 @@
     }
     .handle.br{ right:-8px; bottom:-8px; cursor:nwse-resize; }
     .handle.tl{ left:-8px; top:-8px; cursor:nwse-resize; }
+
+    .header {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  background: #b7b6b8;
+  color: white;
+  border-bottom: 1px solid #222;
+}
+
+.logo {
+  height: 40px;      /* controls size */
+  width: auto;       /* keeps aspect ratio */
+  object-fit: contain;
+  display: block;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.version {
+  font-size: 12px;
+  margin-left: 12px;
+  opacity: 0.6;
+}
+
   </style>
 </head>
 <body>
-
+<div class="header">
+  <img src="logo.png" class="logo" alt="Company Logo">
+  <div class="title">
+    Ink Unit Troubleshooter
+    <span class="version">v1.0</span>
+  </div>
+</div>
 <div class="wrap">
   <div class="diagram" id="diagram">
     <div class="toolbar">
