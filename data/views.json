@@ -1,0 +1,14 @@
+[
+  {
+    "id": "meniscus",
+    "name": "Meniscus Unit Flow",
+    "image": "MeniscusUnitFlowDiagram.png",
+    "hotspots": "./data/hotspots_meniscus.json"
+  },
+  {
+    "id": "pneumatics",
+    "name": "Pneumatics",
+    "image": "./images/pneumatics.png",
+    "hotspots": "./data/hotspots_pneumatics.json"
+  }
+]

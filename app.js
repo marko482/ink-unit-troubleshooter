@@ -5,94 +5,12 @@
 */
 
 const STORAGE_KEY = "ink_guide_hotspots_v1";
+let views = []; // VIEWS DEFINED HERE - either hardcode or load from JSON as needed
+let currentView = null;
+let hotspots = []; //HOTSPOTS DEFINED HERE - either hardcode or load from JSON as needed
+const viewSelect = document.getElementById("viewSelect");
 
-// ==== EDITABLE DATA (this is what export prints) ====
-let hotspots = [
-    {
-        id: "lung",
-        x: 500.7308333333333,
-        y: 117.01185770750989,
-        w: 69.91666666666666,
-        h: 85.40579710144925,
-    },
-    {
-        id: "meniscusPumpFeedLine",
-        x: 875.0916666666667,
-        y: 281.5335968379447,
-        w: 74.90833333333332,
-        h: 93.46640316205536,
-    },
-    {
-        id: "purgePump",
-        x: 555.7808333333334,
-        y: 510.70223978919637,
-        w: 96.4425,
-        h: 94.98023715415019,
-    },
-    {
-        id: "meniscusPumpReturnLine",
-        x: 1301.6950000000002,
-        y: 651.764163372859,
-        w: 102.44583333333333,
-        h: 84.4756258234519,
-    },
-    {
-        id: "a2SeparatorMeniscusFLC",
-        x: 722.3733333333333,
-        y: 920.3820816864296,
-        w: 94.94166666666666,
-        h: 66.467720685112,
-    },
-    {
-        id: "a3SeparatormeniscusRLC",
-        x: 893.4683333333332,
-        y: 921.8827404479578,
-        w: 87.43750000000001,
-        h: 69.46903820816866,
-    },
-    {
-        id: "a1SeparatorLungCupFilter",
-        x: 503.25166666666667,
-        y: 218.0737812911726,
-        w: 55.91999999999999,
-        h: 72.4703557312253,
-    },
-    {
-        id: "f2Filter",
-        x: 380.1833333333334,
-        y: 614.2476943346509,
-        w: 61.923333333333325,
-        h: 64.96706192358366,
-    },
-    {
-        id: "threeWayMagneticValve",
-        x: 494.24666666666667,
-        y: 680.2766798418972,
-        w: 175.98666666666668,
-        h: 63.466403162055336,
-    },
-    {
-        id: "throttleValve",
-        x: 1004.53,
-        y: 384.6469038208169,
-        w: 87.4375,
-        h: 51.46113306982872,
-    },
-    {
-        id: "f10Filter",
-        x: 893.4683333333334,
-        y: 176.05533596837944,
-        w: 51.41749999999997,
-        h: 60.46508563899868,
-    },
-    {
-        id: "twoWayMagneticValve",
-        x: 512.2566666666668,
-        y: 405.65612648221344,
-        w: 99.44416666666666,
-        h: 57.463768115942045,
-    },
-];
+
 
 console.log("hotspots embedded:", hotspots?.length, hotspots); //DEBUG to verify hotspots are present on load
 // ================================================
@@ -118,9 +36,81 @@ async function loadParts() {
     `;
     }
 }
+
+function renderAfterImageReady() {
+    if (img.complete && img.naturalWidth) render();
+    else img.addEventListener("load", () => render(), { once: true });
+}
+
+async function setView(viewId) {
+    currentView = views.find(v => v.id === viewId);
+    if (!currentView) return;
+
+    hotspots = await fetchJson(currentView.hotspots);
+
+    img.src = currentView.image;
+    renderAfterImageReady();
+}
+async function loadViews() {
+    const res = await fetch("./data/views.json", { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status} loading views.json`);
+    views = await res.json();
+}
+
+async function loadHotspots(path) {
+    const res = await fetch(`./${path}`.replace("././", "./"), { cache: "no-store" });
+    if (!res.ok) throw new Error(`HTTP ${res.status} loading hotspots`);
+    hotspots = await res.json();
+}
+
+async function setView(viewId) {
+    const v = views.find(x => x.id === viewId);
+    if (!v) return;
+
+    currentView = v;
+    selectedId = null;
+    editMode = false; // optional: force edit off when switching
+    document.getElementById("toggleEdit").textContent = "Edit: OFF";
+    document.getElementById("addBox").disabled = true;
+    document.getElementById("deleteBox").disabled = true;
+
+    // load hotspots for this view
+    await loadHotspots(v.hotspots);
+
+    // swap image
+    img.src = v.image;
+
+    // render after image loads (handles cached images too)
+    const after = () => render();
+    if (img.complete && img.naturalWidth) after();
+    else img.onload = after;
+
+    // reset panel to default/search view if you have that function
+    // renderDefaultPanel();
+}
+
+async function fetchJson(path) {
+    const res = await fetch(path, { cache: "no-store" });
+    if (!res.ok) throw new Error(`${path} -> HTTP ${res.status}`);
+    return res.json();
+}
+
+async function loadViews() {
+    views = await fetchJson("./data/views.json");
+}
+
+async function loadHotspots(path) {
+    hotspots = await fetchJson(path);
+}
+
 const searchInput = document.getElementById("searchInput");
 const clearSearchBtn = document.getElementById("clearSearch");
 const searchResultsEl = document.getElementById("searchResults");
+
+function initViewSelect() {
+    viewSelect.innerHTML = views.map(v => `<option value="${v.id}">${v.name}</option>`).join("");
+    viewSelect.addEventListener("change", () => setView(viewSelect.value));
+}
 
 function normalize(s) {
     return (s || "").toLowerCase().trim();
@@ -451,6 +441,10 @@ loadLocal();
 
 async function boot() {
     await loadParts();
+    await loadViews();
+    initViewSelect();
+    await setView(views[0]?.id); // load first view by default
+
     wireSearchUI();
     render();
 }
