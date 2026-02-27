@@ -1,555 +1,742 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Ink Unit Troubleshooter</title>
-  <style>
-    body{ margin:0; font-family: system-ui, Arial; }
-    .wrap{
-  display:grid;
-  grid-template-columns: 1fr 420px;
-  height: calc(100vh - 64px);
-}
-    .diagram{ position:relative; overflow:auto; background:#f4f4f4; }
-    .imgWrap{ position:relative; display:inline-block; }
-    img{ display:block; width:min(1200px, 100%); height:auto; }
-    .panel{ border-left:1px solid #ddd; padding:16px; overflow:auto; }
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Ink Unit Troubleshooter</title>
+    <style>
+      body {
+        margin: 0;
+        font-family: system-ui, Arial;
+      }
+      .wrap {
+        display: grid;
+        grid-template-columns: 1fr 420px;
+        height: calc(100vh - 64px);
+      }
+      .diagram {
+        position: relative;
+        overflow: auto;
+        background: #f4f4f4;
+      }
+      .imgWrap {
+        position: relative;
+        display: inline-block;
+      }
+      img {
+        display: block;
+        width: min(1200px, 100%);
+        height: auto;
+      }
+      .panel {
+        border-left: 1px solid #ddd;
+        padding: 16px;
+        overflow: auto;
+      }
 
-    .toolbar{
-      position: sticky; top: 0;
-      background: #fff; border-bottom:1px solid #eee;
-      padding:10px 12px; display:flex; gap:8px; align-items:center; z-index:5;
-    }
-    .btn{
-      border:1px solid #ccc; background:#fff;
-      padding:8px 10px; border-radius:10px;
-      cursor:pointer; user-select:none;
-    }
-    .btn.primary{ border-color:#111; }
-    .btn:active{ transform: translateY(1px); }
-    .muted{ color:#666; font-size:13px; }
-    .tag{ display:inline-block; border:1px solid #ddd; padding:2px 8px; border-radius:999px; font-size:12px; margin-right:6px; }
+      .toolbar {
+        position: sticky;
+        top: 0;
+        background: #fff;
+        border-bottom: 1px solid #eee;
+        padding: 10px 12px;
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        z-index: 5;
+      }
+      .btn {
+        border: 1px solid #ccc;
+        background: #fff;
+        padding: 8px 10px;
+        border-radius: 10px;
+        cursor: pointer;
+        user-select: none;
+      }
+      .btn.primary {
+        border-color: #111;
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
+      .muted {
+        color: #666;
+        font-size: 13px;
+      }
+      .tag {
+        display: inline-block;
+        border: 1px solid #ddd;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+        margin-right: 6px;
+      }
 
-    /* Hotspots */
-    .hotspot{
-      position:absolute;
-      border:2px solid rgba(255,140,0,0.85);
-      background: rgba(255,140,0,0.14);
-      border-radius: 10px;
-      cursor:pointer;
-      transition: .08s ease;
-    }
-    .hotspot:hover{ background: rgba(255,140,0,0.28); }
-    .hotspot.selected{ outline: 3px solid rgba(0,0,0,0.35); }
+      /* Hotspots */ /* connecting to workstation 2*/
+      .hotspot {
+        position: absolute;
+        border: 2px solid rgba(255, 140, 0, 0.85);
+        background: rgba(255, 140, 0, 0.14);
+        border-radius: 10px;
+        cursor: pointer;
+        transition: 0.08s ease;
+      }
+      .hotspot:hover {
+        background: rgba(255, 140, 0, 0.28);
+      }
+      .hotspot.selected {
+        outline: 3px solid rgba(0, 0, 0, 0.35);
+      }
 
-    /* Edit handles */
-    .handle{
-      position:absolute; width:12px; height:12px;
-      background:#fff; border:2px solid rgba(255,140,0,0.95);
-      border-radius: 4px;
-    }
-    .handle.br{ right:-8px; bottom:-8px; cursor:nwse-resize; }
-    .handle.tl{ left:-8px; top:-8px; cursor:nwse-resize; }
+      /* Edit handles */
+      .handle {
+        position: absolute;
+        width: 12px;
+        height: 12px;
+        background: #fff;
+        border: 2px solid rgba(255, 140, 0, 0.95);
+        border-radius: 4px;
+      }
+      .handle.br {
+        right: -8px;
+        bottom: -8px;
+        cursor: nwse-resize;
+      }
+      .handle.tl {
+        left: -8px;
+        top: -8px;
+        cursor: nwse-resize;
+      }
 
-    .header {
-  height: 64px;
-  display: flex;
-  align-items: center;
-  padding: 0 20px;
-  background: #b7b6b8;
-  color: white;
-  border-bottom: 1px solid #222;
-}
+      .header {
+        height: 64px;
+        display: flex;
+        align-items: center;
+        padding: 0 20px;
+        background: #b7b6b8;
+        color: white;
+        border-bottom: 1px solid #222;
+      }
 
-.logo {
-  height: 40px;      /* controls size */
-  width: auto;       /* keeps aspect ratio */
-  object-fit: contain;
-  display: block;
-}
+      .logo {
+        height: 40px; /* controls size */
+        width: auto; /* keeps aspect ratio */
+        object-fit: contain;
+        display: block;
+      }
 
-.title {
-  font-size: 20px;
-  font-weight: 600;
-  letter-spacing: 0.3px;
-}
+      .title {
+        font-size: 20px;
+        font-weight: 600;
+        letter-spacing: 0.3px;
+      }
 
-.version {
-  font-size: 12px;
-  margin-left: 12px;
-  opacity: 0.6;
-}
+      .version {
+        font-size: 12px;
+        margin-left: 12px;
+        opacity: 0.6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <img src="logo.png" class="logo" alt="Company Logo" />
+      <div class="title">
+        Ink Unit Troubleshooter
+        <span class="version">v1.0</span>
+      </div>
+    </div>
+    <div class="wrap">
+      <div class="diagram" id="diagram">
+        <div class="toolbar">
+          <button class="btn primary" id="toggleEdit">Edit: OFF</button>
+          <button class="btn" id="addBox" disabled>Add Box</button>
+          <button class="btn" id="deleteBox" disabled>Delete</button>
+          <button class="btn" id="saveLocal">Save</button>
+          <button class="btn" id="exportJson">Export</button>
+          <span class="muted" id="status"></span>
+        </div>
 
-  </style>
-</head>
-<body>
-<div class="header">
-  <img src="logo.png" class="logo" alt="Company Logo">
-  <div class="title">
-    Ink Unit Troubleshooter
-    <span class="version">v1.0</span>
-  </div>
-</div>
-<div class="wrap">
-  <div class="diagram" id="diagram">
-    <div class="toolbar">
-      <button class="btn primary" id="toggleEdit">Edit: OFF</button>
-      <button class="btn" id="addBox" disabled>Add Box</button>
-      <button class="btn" id="deleteBox" disabled>Delete</button>
-      <button class="btn" id="saveLocal">Save</button>
-      <button class="btn" id="exportJson">Export</button>
-      <span class="muted" id="status"></span>
+        <div class="imgWrap" id="imgWrap">
+          <img
+            id="diagramImg"
+            src="MeniscusUnitFlowDiagram.png"
+            alt="diagram"
+          />
+          <div id="hotspotLayer"></div>
+        </div>
+      </div>
+
+      <div class="panel" id="panel">
+        <h2>Click a component</h2>
+        <div class="muted">
+          Use Edit mode to create/adjust boxes. Save = Local. Export = paste
+          back into the HTML.
+        </div>
+      </div>
     </div>
 
-    <div class="imgWrap" id="imgWrap">
-      <img id="diagramImg" src="MeniscusUnitFlowDiagram.png" alt="diagram">
-      <div id="hotspotLayer"></div>
-    </div>
-  </div>
+    <script>
+      /**
+       * Hotspots are stored in IMAGE PIXELS (natural size).
+       * We render by scaling them to the displayed image size.
+       */
 
-  <div class="panel" id="panel">
-    <h2>Click a component</h2>
-    <div class="muted">Use Edit mode to create/adjust boxes. Save = Local. Export = paste back into the HTML.</div>
-  </div>
-</div>
+      const STORAGE_KEY = "ink_guide_hotspots_v1";
 
-<script>
+      const parts = {
+        // example content (you’ll expand)
+        lung: {
+          name: "Lung",
+          tags: ["air removal"],
+          photo: "photos/lung.jpg",
+          desc: "Stabilizes pressure and removes air.",
+          symptoms: ["Unstable pressure"],
+          checks: ["Verify air supply"],
+        },
+        feedPump: {
+          name: "Meniscus Feed Pump",
+          tags: ["feed"],
+          photo: "photos/feedPump.jpg",
+          desc: "Maintains forward pressure.",
+          symptoms: ["Low feed pressure"],
+          checks: ["Check F10 filter"],
+        },
+        a1SeparatorLungCupFilter: {
+          name: "A1 Separator Lung Cup Filter",
+          tags: ["filter", "air removal"],
+          photo: "photos/meniscusCupFilter.jpg",
+          desc: "Filters air from the separator output.",
+          symptoms: ["Air in separator output"],
+          checks: ["Check for clogs"],
+        },
+        purgePump: {
+          name: "Purge Pump",
+          tags: ["purge"],
+          photo: "photos/purgePump.jpg",
+          desc: "Removes waste ink and air.",
+          symptoms: ["Waste buildup"],
+          checks: ["Check purge flow"],
+        },
+        meniscusPumpReturnLine: {
+          name: "Meniscus Pump Return Line",
+          tags: ["return line"],
+          photo: "photos/meniscusPumpReturnLine.jpg",
+          desc: "Returns ink to the feed pump.",
+          symptoms: ["Ink leaks"],
+          checks: ["Inspect for damage"],
+        },
+        meniscusPumpFeedLine: {
+          name: "Meniscus Pump Feed Line",
+          tags: ["feed line"],
+          photo: "photos/meniscusPumpFeedLine.jpg",
+          desc: "Supplies ink to the meniscus pump.",
+          symptoms: ["Low feed pressure"],
+          checks: ["Inspect for clogs"],
+        },
+        a2SeparatorMeniscusFLC: {
+          name: "A2 Separator Meniscus FLC",
+          tags: ["filter", "flow control"],
+          photo: "photos/meniscusCupFilter.jpg",
+          desc: "Controls flow to the meniscus pump.",
+          symptoms: ["Flow issues"],
+          checks: ["Check for clogs"],
+        },
+        a3SeparatormeniscusRLC: {
+          name: "A3 Separator Meniscus RLC",
+          tags: ["filter", "return line"],
+          photo: "photos/meniscusCupFilter.jpg",
+          desc: "Controls return flow from the meniscus pump.",
+          symptoms: ["Flow issues"],
+          checks: ["Check for clogs"],
+        },
+        throttleValve: {
+          name: "Throttle Valve",
+          tags: ["valve"],
+          photo: "photos/throttleValve.jpg",
+          desc: "Controls flow to the printhead.",
+          symptoms: ["Flow issues"],
+          checks: ["Listen for valve operation"],
+        },
+        f10Filter: {
+          name: "F10 Filter",
+          tags: ["filter"],
+          photo: "photos/f10Filter.jpg",
+          desc: "Filters ink before the feed pump.",
+          symptoms: ["Low feed pressure"],
+          checks: ["Check for clogs"],
+        },
+        f2Filter: {
+          name: "F2 Filter",
+          tags: ["filter"],
+          photo: "photos/f2Filter.jpg",
+          desc: "Filters ink before the purge pump.",
+          symptoms: ["Low purge pressure"],
+          checks: ["Check for clogs"],
+        },
+        twoWayMagneticValve: {
+          name: "Two-Way Magnetic Valve",
+          tags: ["valve"],
+          photo: "photos/twoWayMagneticValve.jpg",
+          desc: "Directs flow between the meniscus pump and the purge pump.",
+          symptoms: ["Flow issues"],
+          checks: ["Listen for valve operation"],
+        },
+        threeWayMagneticValve: {
+          name: "Three-Way Magnetic Valve",
+          tags: ["valve"],
+          photo: "photos/threeWayMagneticValve.jpg",
+          desc: "Directs flow between the meniscus pump, purge pump, and waste.",
+          symptoms: ["Flow issues"],
+          checks: ["Listen for valve operation"],
+        },
+      };
 
+      // ==== EDITABLE DATA (this is what export prints) ====
+      let hotspots = [
+        {
+          id: "lung",
+          x: 500.7308333333333,
+          y: 117.01185770750989,
+          w: 69.91666666666666,
+          h: 85.40579710144925,
+        },
+        {
+          id: "meniscusPumpFeedLine",
+          x: 875.0916666666667,
+          y: 281.5335968379447,
+          w: 74.90833333333332,
+          h: 93.46640316205536,
+        },
+        {
+          id: "purgePump",
+          x: 555.7808333333334,
+          y: 510.70223978919637,
+          w: 96.4425,
+          h: 94.98023715415019,
+        },
+        {
+          id: "meniscusPumpReturnLine",
+          x: 1301.6950000000002,
+          y: 651.764163372859,
+          w: 102.44583333333333,
+          h: 84.4756258234519,
+        },
+        {
+          id: "a2SeparatorMeniscusFLC",
+          x: 722.3733333333333,
+          y: 920.3820816864296,
+          w: 94.94166666666666,
+          h: 66.467720685112,
+        },
+        {
+          id: "a3SeparatormeniscusRLC",
+          x: 893.4683333333332,
+          y: 921.8827404479578,
+          w: 87.43750000000001,
+          h: 69.46903820816866,
+        },
+        {
+          id: "a1SeparatorLungCupFilter",
+          x: 503.25166666666667,
+          y: 218.0737812911726,
+          w: 55.91999999999999,
+          h: 72.4703557312253,
+        },
+        {
+          id: "f2Filter",
+          x: 380.1833333333334,
+          y: 614.2476943346509,
+          w: 61.923333333333325,
+          h: 64.96706192358366,
+        },
+        {
+          id: "threeWayMagneticValve",
+          x: 494.24666666666667,
+          y: 680.2766798418972,
+          w: 175.98666666666668,
+          h: 63.466403162055336,
+        },
+        {
+          id: "throttleValve",
+          x: 1004.53,
+          y: 384.6469038208169,
+          w: 87.4375,
+          h: 51.46113306982872,
+        },
+        {
+          id: "f10Filter",
+          x: 893.4683333333334,
+          y: 176.05533596837944,
+          w: 51.41749999999997,
+          h: 60.46508563899868,
+        },
+        {
+          id: "twoWayMagneticValve",
+          x: 512.2566666666668,
+          y: 405.65612648221344,
+          w: 99.44416666666666,
+          h: 57.463768115942045,
+        },
+      ];
 
-/**
- * Hotspots are stored in IMAGE PIXELS (natural size).
- * We render by scaling them to the displayed image size.
- */
+      console.log("hotspots embedded:", hotspots?.length, hotspots);
+      // ================================================
 
-const STORAGE_KEY = "ink_guide_hotspots_v1";
+      const img = document.getElementById("diagramImg");
+      const layer = document.getElementById("hotspotLayer");
+      const panel = document.getElementById("panel");
+      const statusEl = document.getElementById("status");
 
-const parts = {
-  // example content (you’ll expand)
-  lung: { name:"Lung", tags:["air removal"], photo:"photos/lung.jpg", desc:"Stabilizes pressure and removes air.", symptoms:["Unstable pressure"], checks:["Verify air supply"] },
-  feedPump: { name:"Meniscus Feed Pump", tags:["feed"], photo:"photos/feedPump.jpg", desc:"Maintains forward pressure.", symptoms:["Low feed pressure"], checks:["Check F10 filter"] },
-  a1SeparatorLungCupFilter: { name:"A1 Separator Lung Cup Filter", tags:["filter","air removal"], photo:"photos/meniscusCupFilter.jpg", desc:"Filters air from the separator output.", symptoms:["Air in separator output"], checks:["Check for clogs"] },
-  purgePump: { name:"Purge Pump", tags:["purge"], photo:"photos/purgePump.jpg", desc:"Removes waste ink and air.", symptoms:["Waste buildup"], checks:["Check purge flow"] },
-  meniscusPumpReturnLine : { name:"Meniscus Pump Return Line", tags:["return line"], photo:"photos/meniscusPumpReturnLine.jpg", desc:"Returns ink to the feed pump.", symptoms:["Ink leaks"], checks:["Inspect for damage"] },
-  meniscusPumpFeedLine : { name:"Meniscus Pump Feed Line", tags:["feed line"], photo:"photos/meniscusPumpFeedLine.jpg", desc:"Supplies ink to the meniscus pump.", symptoms:["Low feed pressure"], checks:["Inspect for clogs"] },
-  a2SeparatorMeniscusFLC: { name:"A2 Separator Meniscus FLC", tags:["filter","flow control"], photo:"photos/meniscusCupFilter.jpg", desc:"Controls flow to the meniscus pump.", symptoms:["Flow issues"], checks:["Check for clogs"] },
-  a3SeparatormeniscusRLC: { name:"A3 Separator Meniscus RLC", tags:["filter","return line"], photo:"photos/meniscusCupFilter.jpg", desc:"Controls return flow from the meniscus pump.", symptoms:["Flow issues"], checks:["Check for clogs"] },      
-  throttleValve: { name:"Throttle Valve", tags:["valve"], photo:"photos/throttleValve.jpg", desc:"Controls flow to the printhead.", symptoms:["Flow issues"], checks:["Listen for valve operation"] },
-  f10Filter: { name:"F10 Filter", tags:["filter"], photo:"photos/f10Filter.jpg", desc:"Filters ink before the feed pump.", symptoms:["Low feed pressure"], checks:["Check for clogs"] },
-  f2Filter: { name:"F2 Filter", tags:["filter"], photo:"photos/f2Filter.jpg", desc:"Filters ink before the purge pump.", symptoms:["Low purge pressure"], checks:["Check for clogs"] },
-  twoWayMagneticValve: { name:"Two-Way Magnetic Valve", tags:["valve"], photo:"photos/twoWayMagneticValve.jpg", desc:"Directs flow between the meniscus pump and the purge pump.", symptoms:["Flow issues"], checks:["Listen for valve operation"] },
-  threeWayMagneticValve: { name:"Three-Way Magnetic Valve", tags:["valve"], photo:"photos/threeWayMagneticValve.jpg", desc:"Directs flow between the meniscus pump, purge pump, and waste.", symptoms:["Flow issues"], checks:["Listen for valve operation"] },
+      let editMode = false;
+      let selectedId = null;
+      let dragState = null;
+      function setStatus(msg) {
+        statusEl.textContent = msg || "";
+      }
 
+      function getScale() {
+        const sx = img.clientWidth / img.naturalWidth;
+        const sy = img.clientHeight / img.naturalHeight;
+        return { sx, sy };
+      }
 
+      function render() {
+        // clear ONCE
+        layer.innerHTML = "";
 
-};
+        const { sx, sy } = getScale();
 
-// ==== EDITABLE DATA (this is what export prints) ====
-let hotspots = [
+        const frag = document.createDocumentFragment();
 
-  {
-    "id": "lung",
-    "x": 500.7308333333333,
-    "y": 117.01185770750989,
-    "w": 69.91666666666666,
-    "h": 85.40579710144925
-  },
-  {
-    "id": "meniscusPumpFeedLine",
-    "x": 875.0916666666667,
-    "y": 281.5335968379447,
-    "w": 74.90833333333332,
-    "h": 93.46640316205536
-  },
-  {
-    "id": "purgePump",
-    "x": 555.7808333333334,
-    "y": 510.70223978919637,
-    "w": 96.4425,
-    "h": 94.98023715415019
-  },
-  {
-    "id": "meniscusPumpReturnLine",
-    "x": 1301.6950000000002,
-    "y": 651.764163372859,
-    "w": 102.44583333333333,
-    "h": 84.4756258234519
-  },
-  {
-    "id": "a2SeparatorMeniscusFLC",
-    "x": 722.3733333333333,
-    "y": 920.3820816864296,
-    "w": 94.94166666666666,
-    "h": 66.467720685112
-  },
-  {
-    "id": "a3SeparatormeniscusRLC",
-    "x": 893.4683333333332,
-    "y": 921.8827404479578,
-    "w": 87.43750000000001,
-    "h": 69.46903820816866
-  },
-  {
-    "id": "a1SeparatorLungCupFilter",
-    "x": 503.25166666666667,
-    "y": 218.0737812911726,
-    "w": 55.91999999999999,
-    "h": 72.4703557312253
-  },
-  {
-    "id": "f2Filter",
-    "x": 380.1833333333334,
-    "y": 614.2476943346509,
-    "w": 61.923333333333325,
-    "h": 64.96706192358366
-  },
-  {
-    "id": "threeWayMagneticValve",
-    "x": 494.24666666666667,
-    "y": 680.2766798418972,
-    "w": 175.98666666666668,
-    "h": 63.466403162055336
-  },
-  {
-    "id": "throttleValve",
-    "x": 1004.53,
-    "y": 384.6469038208169,
-    "w": 87.4375,
-    "h": 51.46113306982872
-  },
-  {
-    "id": "f10Filter",
-    "x": 893.4683333333334,
-    "y": 176.05533596837944,
-    "w": 51.41749999999997,
-    "h": 60.46508563899868
-  },
-  {
-    "id": "twoWayMagneticValve",
-    "x": 512.2566666666668,
-    "y": 405.65612648221344,
-    "w": 99.44416666666666,
-    "h": 57.463768115942045
-  }
+        for (const h of hotspots) {
+          const el = document.createElement("div");
+          el.className = "hotspot" + (h.id === selectedId ? " selected" : "");
+          el.dataset.id = h.id;
 
-];
+          el.style.left = h.x * sx + "px";
+          el.style.top = h.y * sy + "px";
+          el.style.width = h.w * sx + "px";
+          el.style.height = h.h * sy + "px";
 
-console.log("hotspots embedded:", hotspots?.length, hotspots);
-// ================================================
+          // 👇 ADD THIS
+          el.addEventListener("click", (e) => {
+            if (!editMode) {
+              e.stopPropagation();
+              showPart(h.id);
+            }
+          });
 
-const img = document.getElementById("diagramImg");
-const layer = document.getElementById("hotspotLayer");
-const panel = document.getElementById("panel");
-const statusEl = document.getElementById("status");
+          if (editMode && h.id === selectedId) {
+            el.appendChild(makeHandle("tl"));
+            el.appendChild(makeHandle("br"));
+          }
 
-let editMode = false;
-let selectedId = null;
-let dragState = null;
-function setStatus(msg){ statusEl.textContent = msg || ""; }
-
-function getScale(){
-  const sx = img.clientWidth / img.naturalWidth;
-  const sy = img.clientHeight / img.naturalHeight;
-  return { sx, sy };
-}
-
-function render(){
-  // clear ONCE
-  layer.innerHTML = "";
-
-  const { sx, sy } = getScale();
-
-  const frag = document.createDocumentFragment();
-
-    for (const h of hotspots){
-    const el = document.createElement("div");
-    el.className = "hotspot" + (h.id === selectedId ? " selected" : "");
-    el.dataset.id = h.id;
-
-    el.style.left   = (h.x * sx) + "px";
-    el.style.top    = (h.y * sy) + "px";
-    el.style.width  = (h.w * sx) + "px";
-    el.style.height = (h.h * sy) + "px";
-
-    // 👇 ADD THIS
-    el.addEventListener("click", (e) => {
-        if (!editMode) {
-        e.stopPropagation();
-        showPart(h.id);
+          frag.appendChild(el);
         }
-    });
 
-    if (editMode && h.id === selectedId){
-        el.appendChild(makeHandle("tl"));
-        el.appendChild(makeHandle("br"));
-    }
+        // append ONCE
+        layer.appendChild(frag);
+      }
 
-    frag.appendChild(el);
-    }
+      function showPart(id) {
+        const p = parts[id] || {
+          name: id,
+          tags: [],
+          desc: "",
+          symptoms: [],
+          checks: [],
+        };
 
-  // append ONCE
-  layer.appendChild(frag);
-
-}
-
-function showPart(id){
-  const p = parts[id] || { name:id, tags:[], desc:"", symptoms:[], checks:[] };
-
-  panel.innerHTML = `
+        panel.innerHTML = `
     <h2>${escapeHtml(p.name)}</h2>
 
-    ${p.photo ? `
+    ${
+      p.photo
+        ? `
       <img src="${p.photo}" 
            style="width:100%;max-height:260px;object-fit:contain;border:1px solid #ddd;border-radius:8px;margin-bottom:12px;"
            onerror="this.style.display='none'">
-    ` : ""}
+    `
+        : ""
+    }
 
-    <div>${(p.tags||[]).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join("")}</div>
+    <div>${(p.tags || []).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join("")}</div>
 
     <p class="muted">${escapeHtml(p.desc || "")}</p>
 
     <h3>Symptoms</h3>
-    <ul>${(p.symptoms||[]).map(s => `<li>${escapeHtml(s)}</li>`).join("")}</ul>
+    <ul>${(p.symptoms || []).map((s) => `<li>${escapeHtml(s)}</li>`).join("")}</ul>
 
     <h3>Checks</h3>
-    <ul>${(p.checks||[]).map(c => `<li>${escapeHtml(c)}</li>`).join("")}</ul>
+    <ul>${(p.checks || []).map((c) => `<li>${escapeHtml(c)}</li>`).join("")}</ul>
   `;
-}
+      }
 
-function select(id){
-  selectedId = id;
-  document.getElementById("deleteBox").disabled = !selectedId;
-  render();
-}
+      function select(id) {
+        selectedId = id;
+        document.getElementById("deleteBox").disabled = !selectedId;
+        render();
+      }
 
-function toggleEdit(){
-  editMode = !editMode;
-  selectedId = null;
-  document.getElementById("toggleEdit").textContent = `Edit: ${editMode ? "ON" : "OFF"}`;
-  document.getElementById("addBox").disabled = !editMode;
-  document.getElementById("deleteBox").disabled = true;
-  setStatus(editMode ? "Click a box to select. Drag to move. Use corners to resize." : "");
-  render();
-}
+      function toggleEdit() {
+        editMode = !editMode;
+        selectedId = null;
+        document.getElementById("toggleEdit").textContent =
+          `Edit: ${editMode ? "ON" : "OFF"}`;
+        document.getElementById("addBox").disabled = !editMode;
+        document.getElementById("deleteBox").disabled = true;
+        setStatus(
+          editMode
+            ? "Click a box to select. Drag to move. Use corners to resize."
+            : "",
+        );
+        render();
+      }
 
-function addBox(){
-  // new box centered-ish
-  const newId = `part_${Date.now()}`;
-  hotspots.push({ id:newId, x: 50, y: 50, w: 200, h: 140 });
-  selectedId = newId;
-  setStatus(`Added ${newId}. Rename the id in Export output.`);
-  render();
-}
+      function addBox() {
+        // new box centered-ish
+        const newId = `part_${Date.now()}`;
+        hotspots.push({ id: newId, x: 50, y: 50, w: 200, h: 140 });
+        selectedId = newId;
+        setStatus(`Added ${newId}. Rename the id in Export output.`);
+        render();
+      }
 
-function deleteBox(){
-  if(!selectedId) return;
-  hotspots = hotspots.filter(h => h.id !== selectedId);
-  selectedId = null;
-  document.getElementById("deleteBox").disabled = true;
-  render();
-}
+      function deleteBox() {
+        if (!selectedId) return;
+        hotspots = hotspots.filter((h) => h.id !== selectedId);
+        selectedId = null;
+        document.getElementById("deleteBox").disabled = true;
+        render();
+      }
 
-function saveLocal(){
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(hotspots));
-  setStatus("Saved locally.");
-}
+      function saveLocal() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(hotspots));
+        setStatus("Saved locally.");
+      }
 
-  function loadLocal(){
-  const raw = localStorage.getItem(STORAGE_KEY);
-  if(!raw) return;
-  try{
-    hotspots = JSON.parse(raw);
-    setStatus("Loaded local saved boxes.");
-  }catch(e){} 
-}
+      function loadLocal() {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return;
+        try {
+          hotspots = JSON.parse(raw);
+          setStatus("Loaded local saved boxes.");
+        } catch (e) {}
+      }
 
-function exportData(){
-  const out = JSON.stringify(hotspots, null, 2);
-  // show in panel for copy/paste
-  panel.innerHTML = `
+      function exportData() {
+        const out = JSON.stringify(hotspots, null, 2);
+        // show in panel for copy/paste
+        panel.innerHTML = `
     <h2>Export Hotspots</h2>
     <div class="muted">Copy this and replace the <b>hotspots</b> array in the HTML.</div>
     <textarea style="width:100%;height:55vh;font-family:ui-monospace,Consolas,monospace;">${out}</textarea>
   `;
-}
+      }
 
-function makeHandle(pos){
-  const h = document.createElement("div");
-  h.className = "handle " + pos;
-  h.dataset.handle = pos;
-  return h;
-}
+      function makeHandle(pos) {
+        const h = document.createElement("div");
+        h.className = "handle " + pos;
+        h.dataset.handle = pos;
+        return h;
+      }
 
-// Move + resize (in image pixel units)
-function enableDragResize(boxEl){
-  let mode = null; // "move" | "resize-tl" | "resize-br"
-  let start = null;
+      // Move + resize (in image pixel units)
+      function enableDragResize(boxEl) {
+        let mode = null; // "move" | "resize-tl" | "resize-br"
+        let start = null;
 
-  const id = boxEl.dataset.id;
-  const hot = hotspots.find(h => h.id === id);
-  if(!hot) return;
+        const id = boxEl.dataset.id;
+        const hot = hotspots.find((h) => h.id === id);
+        if (!hot) return;
 
-  boxEl.onpointerdown = (e)=>{
-    e.stopPropagation();
-    const handle = e.target?.dataset?.handle;
-    if(handle === "tl") mode = "resize-tl";
-    else if(handle === "br") mode = "resize-br";
-    else mode = "move";
+        boxEl.onpointerdown = (e) => {
+          e.stopPropagation();
+          const handle = e.target?.dataset?.handle;
+          if (handle === "tl") mode = "resize-tl";
+          else if (handle === "br") mode = "resize-br";
+          else mode = "move";
 
-    const { sx, sy } = getScale();
-    start = {
-      px: e.clientX, py: e.clientY,
-      x: hot.x, y: hot.y, w: hot.w, h: hot.h,
-      sx, sy
-    };
-    boxEl.setPointerCapture(e.pointerId);
-  };
+          const { sx, sy } = getScale();
+          start = {
+            px: e.clientX,
+            py: e.clientY,
+            x: hot.x,
+            y: hot.y,
+            w: hot.w,
+            h: hot.h,
+            sx,
+            sy,
+          };
+          boxEl.setPointerCapture(e.pointerId);
+        };
 
-  boxEl.onpointermove = (e)=>{
-    if(!start || !mode) return;
-    const dx = (e.clientX - start.px) / start.sx;
-    const dy = (e.clientY - start.py) / start.sy;
+        boxEl.onpointermove = (e) => {
+          if (!start || !mode) return;
+          const dx = (e.clientX - start.px) / start.sx;
+          const dy = (e.clientY - start.py) / start.sy;
 
-    if(mode === "move"){
-      hot.x = Math.max(0, start.x + dx);
-      hot.y = Math.max(0, start.y + dy);
-    }else if(mode === "resize-br"){
-      hot.w = Math.max(30, start.w + dx);
-      hot.h = Math.max(30, start.h + dy);
-    }else if(mode === "resize-tl"){
-      hot.x = Math.max(0, start.x + dx);
-      hot.y = Math.max(0, start.y + dy);
-      hot.w = Math.max(30, start.w - dx);
-      hot.h = Math.max(30, start.h - dy);
-    }
-    render();
-  };
+          if (mode === "move") {
+            hot.x = Math.max(0, start.x + dx);
+            hot.y = Math.max(0, start.y + dy);
+          } else if (mode === "resize-br") {
+            hot.w = Math.max(30, start.w + dx);
+            hot.h = Math.max(30, start.h + dy);
+          } else if (mode === "resize-tl") {
+            hot.x = Math.max(0, start.x + dx);
+            hot.y = Math.max(0, start.y + dy);
+            hot.w = Math.max(30, start.w - dx);
+            hot.h = Math.max(30, start.h - dy);
+          }
+          render();
+        };
 
-  boxEl.onpointerup = ()=>{
-    mode = null;
-    start = null;
-  };
-}
+        boxEl.onpointerup = () => {
+          mode = null;
+          start = null;
+        };
+      }
 
-document.getElementById("toggleEdit").addEventListener("click", toggleEdit);
-document.getElementById("addBox").addEventListener("click", addBox);
-document.getElementById("deleteBox").addEventListener("click", deleteBox);
-document.getElementById("saveLocal").addEventListener("click", saveLocal);
-document.getElementById("exportJson").addEventListener("click", exportData);
+      document
+        .getElementById("toggleEdit")
+        .addEventListener("click", toggleEdit);
+      document.getElementById("addBox").addEventListener("click", addBox);
+      document.getElementById("deleteBox").addEventListener("click", deleteBox);
+      document.getElementById("saveLocal").addEventListener("click", saveLocal);
+      document
+        .getElementById("exportJson")
+        .addEventListener("click", exportData);
 
-// click empty area to deselect in edit mode
-document.getElementById("imgWrap").addEventListener("click", ()=>{
-  if(editMode){
-    selectedId = null;
-    document.getElementById("deleteBox").disabled = true;
-    render();
-  }
-});
+      // click empty area to deselect in edit mode
+      document.getElementById("imgWrap").addEventListener("click", () => {
+        if (editMode) {
+          selectedId = null;
+          document.getElementById("deleteBox").disabled = true;
+          render();
+        }
+      });
 
-// Escape helpers
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));}
+      // Escape helpers
+      function escapeHtml(s) {
+        return String(s).replace(
+          /[&<>"']/g,
+          (m) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              '"': "&quot;",
+              "'": "&#039;",
+            })[m],
+        );
+      }
 
-// Init
-// ===== INIT =====
+      // Init
+      // ===== INIT =====
 
-// load saved boxes first (if you use it)
-loadLocal();
+      // load saved boxes first (if you use it)
+      loadLocal();
 
-// make sure render runs even if image is cached
-function boot(){
-  render();
-}
+      // make sure render runs even if image is cached
+      function boot() {
+        render();
+      }
 
-img.addEventListener("load", boot);
+      img.addEventListener("load", boot);
 
-// if image already loaded (Live Server cache case)
-if (img.complete && img.naturalWidth) {
-  boot();
-}
+      // if image already loaded (Live Server cache case)
+      if (img.complete && img.naturalWidth) {
+        boot();
+      }
 
-function updateBoxElement(el, hot){
-  const { sx, sy } = getScale();
-  el.style.left   = (hot.x * sx) + "px";
-  el.style.top    = (hot.y * sy) + "px";
-  el.style.width  = (hot.w * sx) + "px";
-  el.style.height = (hot.h * sy) + "px";
-}
+      function updateBoxElement(el, hot) {
+        const { sx, sy } = getScale();
+        el.style.left = hot.x * sx + "px";
+        el.style.top = hot.y * sy + "px";
+        el.style.width = hot.w * sx + "px";
+        el.style.height = hot.h * sy + "px";
+      }
 
-layer.addEventListener("pointerdown", (e) => {
-  if (!editMode) return;
+      layer.addEventListener("pointerdown", (e) => {
+        if (!editMode) return;
 
-  const boxEl = e.target.closest(".hotspot");
-  if (!boxEl) return;
+        const boxEl = e.target.closest(".hotspot");
+        if (!boxEl) return;
 
-  e.preventDefault();
-  e.stopPropagation();
+        e.preventDefault();
+        e.stopPropagation();
 
-  const id = boxEl.dataset.id;
-  select(id);
+        const id = boxEl.dataset.id;
+        select(id);
 
-  const hot = hotspots.find(h => h.id === id);
-  if (!hot) return;
+        const hot = hotspots.find((h) => h.id === id);
+        if (!hot) return;
 
-  const handle = e.target?.dataset?.handle;
-  const mode = handle === "tl" ? "resize-tl"
-            : handle === "br" ? "resize-br"
-            : "move";
+        const handle = e.target?.dataset?.handle;
+        const mode =
+          handle === "tl"
+            ? "resize-tl"
+            : handle === "br"
+              ? "resize-br"
+              : "move";
 
-  const { sx, sy } = getScale();
+        const { sx, sy } = getScale();
 
-  dragState = {
-    id,
-    mode,
-    boxEl,
-    sx, sy,
-    px: e.clientX,
-    py: e.clientY,
-    x: hot.x, y: hot.y, w: hot.w, h: hot.h
-  };
+        dragState = {
+          id,
+          mode,
+          boxEl,
+          sx,
+          sy,
+          px: e.clientX,
+          py: e.clientY,
+          x: hot.x,
+          y: hot.y,
+          w: hot.w,
+          h: hot.h,
+        };
 
-  layer.setPointerCapture(e.pointerId);
-});
+        layer.setPointerCapture(e.pointerId);
+      });
 
-layer.addEventListener("pointermove", (e) => {
-  if (!dragState) return;
+      layer.addEventListener("pointermove", (e) => {
+        if (!dragState) return;
 
-  e.preventDefault();
+        e.preventDefault();
 
-  const hot = hotspots.find(h => h.id === dragState.id);
-  if (!hot) return;
+        const hot = hotspots.find((h) => h.id === dragState.id);
+        if (!hot) return;
 
-  const dx = (e.clientX - dragState.px) / dragState.sx;
-  const dy = (e.clientY - dragState.py) / dragState.sy;
+        const dx = (e.clientX - dragState.px) / dragState.sx;
+        const dy = (e.clientY - dragState.py) / dragState.sy;
 
-  if (dragState.mode === "move") {
-    hot.x = Math.max(0, dragState.x + dx);
-    hot.y = Math.max(0, dragState.y + dy);
-  } else if (dragState.mode === "resize-br") {
-    hot.w = Math.max(30, dragState.w + dx);
-    hot.h = Math.max(30, dragState.h + dy);
-  } else if (dragState.mode === "resize-tl") {
-    hot.x = Math.max(0, dragState.x + dx);
-    hot.y = Math.max(0, dragState.y + dy);
-    hot.w = Math.max(30, dragState.w - dx);
-    hot.h = Math.max(30, dragState.h - dy);
-  }
+        if (dragState.mode === "move") {
+          hot.x = Math.max(0, dragState.x + dx);
+          hot.y = Math.max(0, dragState.y + dy);
+        } else if (dragState.mode === "resize-br") {
+          hot.w = Math.max(30, dragState.w + dx);
+          hot.h = Math.max(30, dragState.h + dy);
+        } else if (dragState.mode === "resize-tl") {
+          hot.x = Math.max(0, dragState.x + dx);
+          hot.y = Math.max(0, dragState.y + dy);
+          hot.w = Math.max(30, dragState.w - dx);
+          hot.h = Math.max(30, dragState.h - dy);
+        }
 
-  updateBoxElement(dragState.boxEl, hot);
-});
+        updateBoxElement(dragState.boxEl, hot);
+      });
 
-layer.addEventListener("pointerup", () => {
-  if (!dragState) return;
-  dragState = null;
-  render();
-});
+      layer.addEventListener("pointerup", () => {
+        if (!dragState) return;
+        dragState = null;
+        render();
+      });
 
-layer.addEventListener("pointercancel", () => {
-  dragState = null;
-  render();
-});
-
-
-</script>
-
-</body>
+      layer.addEventListener("pointercancel", () => {
+        dragState = null;
+        render();
+      });
+    </script>
+  </body>
 </html>
