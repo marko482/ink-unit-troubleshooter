@@ -423,6 +423,10 @@ document.getElementById("imgWrap").addEventListener("click", () => {
         selectedId = null;
         document.getElementById("deleteBox").disabled = true;
         render();
+    } else {
+        selectedId = null;
+        render();
+        renderDefaultPanel();
     }
 });
 
@@ -546,3 +550,23 @@ layer.addEventListener("pointercancel", () => {
     dragState = null;
     render();
 });
+
+function renderDefaultPanel() {
+    panel.innerHTML = `
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+      <input id="searchInput" placeholder="Search parts, tags, symptoms..."
+        style="flex:1; padding:10px 12px; border:1px solid #ccc; border-radius:10px; font-size:14px;">
+      <button id="clearSearch" class="btn">Clear</button>
+    </div>
+
+    <div id="searchResults"></div>
+    <hr style="border:none;border-top:1px solid #eee;margin:12px 0;">
+
+    <h2>Click a component</h2>
+    <div class="muted">
+      Use Edit mode to create/adjust boxes.
+    </div>
+  `;
+
+    wireSearchUI();  // reattach search listeners
+}
