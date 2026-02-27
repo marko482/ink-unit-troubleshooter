@@ -1,0 +1,106 @@
+{
+  "lung": {
+    "name": "Lung",
+    "tags": ["air removal"],
+    "photo": "photos/lung.jpg",
+    "desc": "Stabilizes pressure and removes air.",
+    "symptoms": ["Unstable pressure"],
+    "checks": ["Verify air supply"]
+  },
+  "feedPump": {
+    "name": "Meniscus Feed Pump",
+    "tags": ["feed"],
+    "photo": "photos/feedPump.jpg",
+    "desc": "Maintains forward pressure.",
+    "symptoms": ["Low feed pressure"],
+    "checks": ["Check F10 filter"]
+  },
+  "a1SeparatorLungCupFilter": {
+    "name": "A1 Separator Lung Cup Filter",
+    "tags": ["filter", "air removal"],
+    "photo": "photos/meniscusCupFilter.jpg",
+    "desc": "Filters air from the separator output.",
+    "symptoms": ["Air in separator output"],
+    "checks": ["Check for clogs"]
+  },
+  "purgePump": {
+    "name": "Purge Pump",
+    "tags": ["purge"],
+    "photo": "photos/purgePump.jpg",
+    "desc": "Removes waste ink and air.",
+    "symptoms": ["Waste buildup"],
+    "checks": ["Check purge flow"]
+  },
+  "meniscusPumpReturnLine": {
+    "name": "Meniscus Pump Return Line",
+    "tags": ["return line"],
+    "photo": "photos/meniscusPumpReturnLine.jpg",
+    "desc": "Returns ink to the feed pump.",
+    "symptoms": ["Ink leaks"],
+    "checks": ["Inspect for damage"]
+  },
+  "meniscusPumpFeedLine": {
+    "name": "Meniscus Pump Feed Line",
+    "tags": ["feed line"],
+    "photo": "photos/meniscusPumpFeedLine.jpg",
+    "desc": "Supplies ink to the meniscus pump.",
+    "symptoms": ["Low feed pressure"],
+    "checks": ["Inspect for clogs"]
+  },
+  "a2SeparatorMeniscusFLC": {
+    "name": "A2 Separator Meniscus FLC",
+    "tags": ["filter", "flow control"],
+    "photo": "photos/meniscusCupFilter.jpg",
+    "desc": "Controls flow to the meniscus pump.",
+    "symptoms": ["Flow issues"],
+    "checks": ["Check for clogs"]
+  },
+  "a3SeparatormeniscusRLC": {
+    "name": "A3 Separator Meniscus RLC",
+    "tags": ["filter", "return line"],
+    "photo": "photos/meniscusCupFilter.jpg",
+    "desc": "Controls return flow from the meniscus pump.",
+    "symptoms": ["Flow issues"],
+    "checks": ["Check for clogs"]
+  },
+  "throttleValve": {
+    "name": "Throttle Valve",
+    "tags": ["valve"],
+    "photo": "photos/throttleValve.jpg",
+    "desc": "Controls flow to the printhead.",
+    "symptoms": ["Flow issues"],
+    "checks": ["Listen for valve operation"]
+  },
+  "f10Filter": {
+    "name": "F10 Filter",
+    "tags": ["filter"],
+    "photo": "photos/f10Filter.jpg",
+    "desc": "Filters ink before the feed pump.",
+    "symptoms": ["Low feed pressure"],
+    "checks": ["Check for clogs"]
+  },
+  "f2Filter": {
+    "name": "F2 Filter",
+    "tags": ["filter"],
+    "photo": "photos/f2Filter.jpg",
+    "desc": "Filters ink before the purge pump.",
+    "symptoms": ["Low purge pressure"],
+    "checks": ["Check for clogs"]
+  },
+  "twoWayMagneticValve": {
+    "name": "Two-Way Magnetic Valve",
+    "tags": ["valve"],
+    "photo": "photos/twoWayMagneticValve.jpg",
+    "desc": "Directs flow between the meniscus pump and the purge pump.",
+    "symptoms": ["Flow issues"],
+    "checks": ["Listen for valve operation"]
+  },
+  "threeWayMagneticValve": {
+    "name": "Three-Way Magnetic Valve",
+    "tags": ["valve"],
+    "photo": "photos/threeWayMagneticValve.jpg",
+    "desc": "Directs flow between the meniscus pump, purge pump, and waste.",
+    "symptoms": ["Flow issues"],
+    "checks": ["Listen for valve operation"]
+  }
+}

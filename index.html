@@ -136,6 +136,11 @@
         margin-left: 12px;
         opacity: 0.6;
       }
+      #hotspotLayer {
+        position: absolute;
+        left: 0;
+        top: 0;
+      }
     </style>
   </head>
   <body>
@@ -183,114 +188,6 @@
        */
 
       const STORAGE_KEY = "ink_guide_hotspots_v1";
-
-      const parts = {
-        // example content (you’ll expand)
-        lung: {
-          name: "Lung",
-          tags: ["air removal"],
-          photo: "photos/lung.jpg",
-          desc: "Stabilizes pressure and removes air.",
-          symptoms: ["Unstable pressure"],
-          checks: ["Verify air supply"],
-        },
-        feedPump: {
-          name: "Meniscus Feed Pump",
-          tags: ["feed"],
-          photo: "photos/feedPump.jpg",
-          desc: "Maintains forward pressure.",
-          symptoms: ["Low feed pressure"],
-          checks: ["Check F10 filter"],
-        },
-        a1SeparatorLungCupFilter: {
-          name: "A1 Separator Lung Cup Filter",
-          tags: ["filter", "air removal"],
-          photo: "photos/meniscusCupFilter.jpg",
-          desc: "Filters air from the separator output.",
-          symptoms: ["Air in separator output"],
-          checks: ["Check for clogs"],
-        },
-        purgePump: {
-          name: "Purge Pump",
-          tags: ["purge"],
-          photo: "photos/purgePump.jpg",
-          desc: "Removes waste ink and air.",
-          symptoms: ["Waste buildup"],
-          checks: ["Check purge flow"],
-        },
-        meniscusPumpReturnLine: {
-          name: "Meniscus Pump Return Line",
-          tags: ["return line"],
-          photo: "photos/meniscusPumpReturnLine.jpg",
-          desc: "Returns ink to the feed pump.",
-          symptoms: ["Ink leaks"],
-          checks: ["Inspect for damage"],
-        },
-        meniscusPumpFeedLine: {
-          name: "Meniscus Pump Feed Line",
-          tags: ["feed line"],
-          photo: "photos/meniscusPumpFeedLine.jpg",
-          desc: "Supplies ink to the meniscus pump.",
-          symptoms: ["Low feed pressure"],
-          checks: ["Inspect for clogs"],
-        },
-        a2SeparatorMeniscusFLC: {
-          name: "A2 Separator Meniscus FLC",
-          tags: ["filter", "flow control"],
-          photo: "photos/meniscusCupFilter.jpg",
-          desc: "Controls flow to the meniscus pump.",
-          symptoms: ["Flow issues"],
-          checks: ["Check for clogs"],
-        },
-        a3SeparatormeniscusRLC: {
-          name: "A3 Separator Meniscus RLC",
-          tags: ["filter", "return line"],
-          photo: "photos/meniscusCupFilter.jpg",
-          desc: "Controls return flow from the meniscus pump.",
-          symptoms: ["Flow issues"],
-          checks: ["Check for clogs"],
-        },
-        throttleValve: {
-          name: "Throttle Valve",
-          tags: ["valve"],
-          photo: "photos/throttleValve.jpg",
-          desc: "Controls flow to the printhead.",
-          symptoms: ["Flow issues"],
-          checks: ["Listen for valve operation"],
-        },
-        f10Filter: {
-          name: "F10 Filter",
-          tags: ["filter"],
-          photo: "photos/f10Filter.jpg",
-          desc: "Filters ink before the feed pump.",
-          symptoms: ["Low feed pressure"],
-          checks: ["Check for clogs"],
-        },
-        f2Filter: {
-          name: "F2 Filter",
-          tags: ["filter"],
-          photo: "photos/f2Filter.jpg",
-          desc: "Filters ink before the purge pump.",
-          symptoms: ["Low purge pressure"],
-          checks: ["Check for clogs"],
-        },
-        twoWayMagneticValve: {
-          name: "Two-Way Magnetic Valve",
-          tags: ["valve"],
-          photo: "photos/twoWayMagneticValve.jpg",
-          desc: "Directs flow between the meniscus pump and the purge pump.",
-          symptoms: ["Flow issues"],
-          checks: ["Listen for valve operation"],
-        },
-        threeWayMagneticValve: {
-          name: "Three-Way Magnetic Valve",
-          tags: ["valve"],
-          photo: "photos/threeWayMagneticValve.jpg",
-          desc: "Directs flow between the meniscus pump, purge pump, and waste.",
-          symptoms: ["Flow issues"],
-          checks: ["Listen for valve operation"],
-        },
-      };
 
       // ==== EDITABLE DATA (this is what export prints) ====
       let hotspots = [
@@ -380,13 +277,30 @@
         },
       ];
 
-      console.log("hotspots embedded:", hotspots?.length, hotspots);
+      console.log("hotspots embedded:", hotspots?.length, hotspots); //DEBUG to verify hotspots are present on load
       // ================================================
 
       const img = document.getElementById("diagramImg");
       const layer = document.getElementById("hotspotLayer");
       const panel = document.getElementById("panel");
       const statusEl = document.getElementById("status");
+
+      let parts = {}; // load from JSON or define inline as needed
+
+      async function loadParts() {
+        try {
+          const res = await fetch("./data/parts.json", { cache: "no-store" });
+          if (!res.ok) throw new Error(`HTTP ${res.status} loading parts.json`);
+          parts = await res.json();
+          console.log("Loaded parts:", Object.keys(parts).length);
+        } catch (err) {
+          console.error(err);
+          panel.innerHTML = `
+      <h2>Failed to load parts.json</h2>
+      <div class="muted">${escapeHtml(String(err))}</div>
+    `;
+        }
+      }
 
       let editMode = false;
       let selectedId = null;
@@ -419,7 +333,6 @@
           el.style.width = h.w * sx + "px";
           el.style.height = h.h * sy + "px";
 
-          // 👇 ADD THIS
           el.addEventListener("click", (e) => {
             if (!editMode) {
               e.stopPropagation();
@@ -440,29 +353,26 @@
       }
 
       function showPart(id) {
-        const p = parts[id] || {
-          name: id,
-          tags: [],
-          desc: "",
-          symptoms: [],
-          checks: [],
-        };
+        const p = parts[id];
+        if (!p) {
+          panel.innerHTML = `<h2>Missing part definition: ${escapeHtml(id)}</h2>`;
+          return;
+        }
 
         panel.innerHTML = `
-    <h2>${escapeHtml(p.name)}</h2>
+    <h2>${escapeHtml(p.name || id)}</h2>
 
     ${
       p.photo
         ? `
-      <img src="${p.photo}" 
-           style="width:100%;max-height:260px;object-fit:contain;border:1px solid #ddd;border-radius:8px;margin-bottom:12px;"
+      <img src="${p.photo}"
+           style="width:100%;max-height:260px;object-fit:contain;border:1px solid #ddd;border-radius:8px;margin:10px 0;"
            onerror="this.style.display='none'">
     `
         : ""
     }
 
     <div>${(p.tags || []).map((t) => `<span class="tag">${escapeHtml(t)}</span>`).join("")}</div>
-
     <p class="muted">${escapeHtml(p.desc || "")}</p>
 
     <h3>Symptoms</h3>
@@ -634,21 +544,20 @@
 
       // Init
       // ===== INIT =====
-
-      // load saved boxes first (if you use it)
       loadLocal();
 
-      // make sure render runs even if image is cached
-      function boot() {
+      async function boot() {
+        await loadParts();
         render();
       }
 
-      img.addEventListener("load", boot);
-
-      // if image already loaded (Live Server cache case)
       if (img.complete && img.naturalWidth) {
         boot();
+      } else {
+        img.addEventListener("load", boot);
       }
+
+      window.addEventListener("resize", render);
 
       function updateBoxElement(el, hot) {
         const { sx, sy } = getScale();
