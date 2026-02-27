@@ -1,0 +1,136 @@
+body {
+  margin: 0;
+  font-family: system-ui, Arial;
+}
+.wrap {
+  display: grid;
+  grid-template-columns: 1fr 420px;
+  height: calc(100vh - 64px);
+}
+.diagram {
+  position: relative;
+  overflow: auto;
+  background: #f4f4f4;
+}
+.imgWrap {
+  position: relative;
+  display: inline-block;
+}
+img {
+  display: block;
+  width: min(1200px, 100%);
+  height: auto;
+}
+.panel {
+  border-left: 1px solid #ddd;
+  padding: 16px;
+  overflow: auto;
+}
+
+.toolbar {
+  position: sticky;
+  top: 0;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  padding: 10px 12px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  z-index: 5;
+}
+.btn {
+  border: 1px solid #ccc;
+  background: #fff;
+  padding: 8px 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+.btn.primary {
+  border-color: #111;
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.muted {
+  color: #666;
+  font-size: 13px;
+}
+.tag {
+  display: inline-block;
+  border: 1px solid #ddd;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  margin-right: 6px;
+}
+
+/* Hotspots */ /* connecting to workstation 2*/
+.hotspot {
+  position: absolute;
+  border: 2px solid rgba(255, 140, 0, 0.85);
+  background: rgba(255, 140, 0, 0.14);
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.08s ease;
+}
+.hotspot:hover {
+  background: rgba(255, 140, 0, 0.28);
+}
+.hotspot.selected {
+  outline: 3px solid rgba(0, 0, 0, 0.35);
+}
+
+/* Edit handles */
+.handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border: 2px solid rgba(255, 140, 0, 0.95);
+  border-radius: 4px;
+}
+.handle.br {
+  right: -8px;
+  bottom: -8px;
+  cursor: nwse-resize;
+}
+.handle.tl {
+  left: -8px;
+  top: -8px;
+  cursor: nwse-resize;
+}
+
+.header {
+  height: 64px;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  background: #b7b6b8;
+  color: white;
+  border-bottom: 1px solid #222;
+}
+
+.logo {
+  height: 40px; /* controls size */
+  width: auto; /* keeps aspect ratio */
+  object-fit: contain;
+  display: block;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+.version {
+  font-size: 12px;
+  margin-left: 12px;
+  opacity: 0.6;
+}
+#hotspotLayer {
+  position: absolute;
+  left: 0;
+  top: 0;
+}

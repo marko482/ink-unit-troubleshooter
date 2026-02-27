@@ -118,6 +118,89 @@ async function loadParts() {
     `;
     }
 }
+const searchInput = document.getElementById("searchInput");
+const clearSearchBtn = document.getElementById("clearSearch");
+const searchResultsEl = document.getElementById("searchResults");
+
+function normalize(s) {
+    return (s || "").toLowerCase().trim();
+}
+
+function partText(p) {
+    const tags = (p.tags || []).join(" ");
+    const symptoms = (p.symptoms || []).join(" ");
+    const checks = (p.checks || []).join(" ");
+    return normalize([p.name, p.desc, tags, symptoms, checks].join(" "));
+}
+
+function searchParts(query) {
+    const q = normalize(query);
+    if (!q) return [];
+
+    const results = [];
+    for (const [id, p] of Object.entries(parts)) {
+        const hay = partText(p);
+        if (hay.includes(q)) results.push({ id, p });
+    }
+
+    // simple sort: name match first
+    results.sort((a, b) => {
+        const an = normalize(a.p.name).includes(q) ? 0 : 1;
+        const bn = normalize(b.p.name).includes(q) ? 0 : 1;
+        return an - bn || a.p.name.localeCompare(b.p.name);
+    });
+
+    return results;
+}
+
+function renderSearchResults(items, query) {
+    if (!query) {
+        searchResultsEl.innerHTML = `<div class="muted">Search to find parts by name, tag, symptom, or check.</div>`;
+        return;
+    }
+    if (!items.length) {
+        searchResultsEl.innerHTML = `<div class="muted">No matches for "${escapeHtml(query)}".</div>`;
+        return;
+    }
+
+    searchResultsEl.innerHTML = items.map(({ id, p }) => `
+    <div class="btn" style="width:100%; text-align:left; margin:6px 0;"
+         data-part-id="${escapeHtml(id)}">
+      <div style="font-weight:600;">${escapeHtml(p.name || id)}</div>
+      <div class="muted">${escapeHtml((p.tags || []).join(" • "))}</div>
+    </div>
+  `).join("");
+
+    // click handlers
+    searchResultsEl.querySelectorAll("[data-part-id]").forEach(el => {
+        el.addEventListener("click", () => {
+            const id = el.getAttribute("data-part-id");
+            showPart(id);
+            // optional: highlight hotspot
+            selectedId = id;
+            render();
+        });
+    });
+}
+
+function wireSearchUI() {
+    if (!searchInput) return;
+
+    const run = () => {
+        const q = searchInput.value;
+        const items = searchParts(q);
+        renderSearchResults(items, q);
+    };
+
+    searchInput.addEventListener("input", run);
+    clearSearchBtn?.addEventListener("click", () => {
+        searchInput.value = "";
+        renderSearchResults([], "");
+        searchInput.focus();
+    });
+
+    renderSearchResults([], "");
+}
 
 let editMode = false;
 let selectedId = null;
@@ -364,6 +447,7 @@ loadLocal();
 
 async function boot() {
     await loadParts();
+    wireSearchUI();
     render();
 }
 
