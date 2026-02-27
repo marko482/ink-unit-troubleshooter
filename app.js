@@ -33,6 +33,93 @@ let dragState = null;
 
 let booted = false;
 
+
+
+//--------WIZARD DATA STRUCTURE (EXAMPLE)-------- ADD MORE WIZARDS/STEPLISTS AS NEEDED --------
+const wizards = [
+  {
+    id: "no_ink_at_head",
+    title: "No ink at head",
+    description: "Start here when the head is starving / no delivery.",
+    startStep: "s1",
+    steps: {
+      s1: {
+        title: "Confirm ink supply + obvious restrictions",
+        text: "Make sure ink supply is present and lines aren’t pinched.",
+        bullets: [
+          "Verify ink level / supply valve open",
+          "Check for kinked feed line",
+          "Check for obvious leaks / air being pulled in"
+        ],
+        next: "s2"
+      },
+      s2: {
+        title: "Check F10 filter (restriction)",
+        hotspotId: "f10Filter",
+        bullets: [
+          "Inspect/replace if dirty",
+          "If recurring contamination: check upstream cleanliness"
+        ],
+        passNext: "s3",
+        failNext: "s3",
+        passLabel: "Filter OK → Next",
+        failLabel: "Replaced/cleaned → Next"
+      },
+      s3: {
+        title: "Check meniscus feed pump operation",
+        hotspotId: "feedPump",
+        bullets: [
+          "Verify air supply/reservoir",
+          "Confirm pump actuates and holds pressure",
+          "Check throttle valve setting if applicable"
+        ],
+        next: "s4"
+      },
+      s4: {
+        title: "Check 3-way magnetic valve routing",
+        hotspotId: "threeWayMagneticValve",
+        bullets: [
+          "Confirm valve actuates during command",
+          "Verify correct hose routing",
+          "Check for debris/sticking"
+        ],
+        next: null
+      }
+    }
+  },
+
+  {
+    id: "ink_dripping",
+    title: "Ink dripping / too positive",
+    description: "Start here when meniscus is too high / dripping.",
+    startStep: "d1",
+    steps: {
+      d1: {
+        title: "Check return pull (return pump + restrictions)",
+        hotspotId: "meniscusPumpReturnLine",
+        bullets: [
+          "Inspect return restrictions/kinks",
+          "Confirm return pump actuates",
+          "Inspect F2/F10 if used in return path"
+        ],
+        next: null
+      }
+    }
+  }
+];
+
+
+//--------END WIZARD DATA STRUCTURE--------
+
+
+
+
+
+//--------UTILITY FUNCTIONS--------
+
+
+
+
 function setStatus(msg) {
   statusEl.textContent = msg || "";
 }
@@ -171,8 +258,29 @@ function renderSearchResults(items, query) {
   `).join("");
 }
 
+
+//--------SIDE PANEL FOR SEARCH/WIZARD CONTENT--------
 function buildPanelOnce() {
   panel.innerHTML = `
+    <div style="display:flex; gap:8px; margin-bottom:12px;">
+      <button id="tabSearch" class="btn" type="button">Search</button>
+      <button id="tabWizard" class="btn" type="button">Wizard</button>
+    </div>
+
+    <div id="panelBody"></div>
+  `;
+
+  document.getElementById("tabSearch").addEventListener("click", () => renderSearchPanel());
+  document.getElementById("tabWizard").addEventListener("click", () => renderWizardHome());
+
+  // default tab
+  renderWizardHome();
+}
+
+//PANEL RENDERERS (SEARCH + WIZARD)
+function renderSearchPanel(){
+  const body = document.getElementById("panelBody");
+  body.innerHTML = `
     <div style="display:flex; gap:8px; margin-bottom:12px;">
       <input id="searchInput" placeholder="Search parts, tags, symptoms..."
         style="flex:1; padding:10px 12px; border:1px solid #ccc; border-radius:10px; font-size:14px;">
@@ -192,13 +300,11 @@ function buildPanelOnce() {
   const clearBtn = document.getElementById("clearSearch");
   const resultsEl = document.getElementById("searchResults");
 
-  // input handler (once)
   searchInput.addEventListener("input", () => {
     const q = searchInput.value;
     renderSearchResults(searchParts(q), q);
   });
 
-  // clear handler (once)
   clearBtn.addEventListener("click", () => {
     searchInput.value = "";
     renderSearchResults([], "");
@@ -209,19 +315,51 @@ function buildPanelOnce() {
     `;
   });
 
-  // results click (event delegation, once)
   resultsEl.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-part-id]");
     if (!btn) return;
     const id = btn.getAttribute("data-part-id");
-    selectedId = id;
+    selectedId = hotspots.some(h => h.id === id) ? id : null;
     showPart(id);
     render();
+    if (selectedId) scrollHotspotIntoView(selectedId);
   });
 
-  // initial empty results
   renderSearchResults([], "");
 }
+
+function renderWizardHome(){
+  const body = document.getElementById("panelBody");
+  body.innerHTML = `
+    <h2>Troubleshooting Wizard</h2>
+    <div class="muted" style="margin-bottom:12px;">Pick a symptom to start a guided checklist.</div>
+
+    <div id="wizardList"></div>
+    <hr style="border:none;border-top:1px solid #eee;margin:12px 0;">
+    <div id="wizardStep"></div>
+  `;
+
+  const list = document.getElementById("wizardList");
+  list.innerHTML = wizards.map(w => `
+    <button class="btn" style="width:100%; text-align:left; margin:6px 0;"
+            data-wizard-id="${escapeHtml(w.id)}">
+      <div style="font-weight:600;">${escapeHtml(w.title)}</div>
+      <div class="muted">${escapeHtml(w.description || "")}</div>
+    </button>
+  `).join("");
+
+  list.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-wizard-id]");
+    if (!btn) return;
+    startWizard(btn.getAttribute("data-wizard-id"));
+  });
+
+  document.getElementById("wizardStep").innerHTML = `
+    <div class="muted">Select a symptom above.</div>
+  `;
+}
+//-----------------------------------
+
 
 function initViewSelect() {
   if (!viewSelect) return;
@@ -317,6 +455,104 @@ function updateBoxElement(el, hot) {
   el.style.width = (hot.w * sx) + "px";
   el.style.height = (hot.h * sy) + "px";
 }
+
+
+//--------WIZARD LOGIC--------
+let activeWizard = null;
+let activeStepId = null;
+
+function startWizard(wizardId){
+  activeWizard = wizards.find(w => w.id === wizardId);
+  if (!activeWizard) return;
+  activeStepId = activeWizard.startStep;
+  renderWizardStep();
+}
+
+function renderWizardStep(){
+  const stepHost = document.getElementById("wizardStep");
+  if (!stepHost || !activeWizard || !activeStepId) return;
+
+  const step = activeWizard.steps[activeStepId];
+  if (!step){
+    stepHost.innerHTML = `<div class="muted">Wizard step not found.</div>`;
+    return;
+  }
+
+  // highlight + jump if step points to a part/hotspot
+  if (step.hotspotId){
+    selectedId = hotspots.some(h => h.id === step.hotspotId) ? step.hotspotId : null;
+    render();
+    if (selectedId) scrollHotspotIntoView(selectedId);
+  } else {
+    selectedId = null;
+    render();
+  }
+
+  stepHost.innerHTML = `
+    <h3 style="margin:0 0 6px;">${escapeHtml(step.title)}</h3>
+    ${step.text ? `<div class="muted" style="margin-bottom:10px;">${escapeHtml(step.text)}</div>` : ""}
+
+    ${step.bullets?.length ? `
+      <ul>${step.bullets.map(b => `<li>${escapeHtml(b)}</li>`).join("")}</ul>
+    ` : ""}
+
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;">
+      ${step.hotspotId ? `<button class="btn" id="btnOpenPart" type="button">Open Part</button>` : ""}
+      ${step.passNext ? `<button class="btn" id="btnPass" type="button">${escapeHtml(step.passLabel || "Pass")}</button>` : ""}
+      ${step.failNext ? `<button class="btn" id="btnFail" type="button">${escapeHtml(step.failLabel || "Fail")}</button>` : ""}
+      ${step.next ? `<button class="btn" id="btnNext" type="button">Next</button>` : ""}
+      <button class="btn" id="btnBack" type="button">Back</button>
+      <button class="btn" id="btnExit" type="button">Exit</button>
+    </div>
+  `;
+
+  // wire buttons (these are recreated per step, so wiring here is fine)
+  if (step.hotspotId){
+    document.getElementById("btnOpenPart")?.addEventListener("click", () => {
+      // Switch to Search tab and show part details
+      renderSearchPanel();
+      showPart(step.hotspotId);
+      selectedId = step.hotspotId;
+      render();
+      scrollHotspotIntoView(step.hotspotId);
+    });
+  }
+
+  document.getElementById("btnNext")?.addEventListener("click", () => {
+    activeStepId = step.next;
+    renderWizardStep();
+  });
+
+  document.getElementById("btnPass")?.addEventListener("click", () => {
+    activeStepId = step.passNext;
+    renderWizardStep();
+  });
+
+  document.getElementById("btnFail")?.addEventListener("click", () => {
+    activeStepId = step.failNext;
+    renderWizardStep();
+  });
+
+  document.getElementById("btnBack")?.addEventListener("click", () => {
+    // simple back: restart wizard (easy). Upgrade later to true history stack.
+    activeStepId = activeWizard.startStep;
+    renderWizardStep();
+  });
+
+  document.getElementById("btnExit")?.addEventListener("click", () => {
+    activeWizard = null;
+    activeStepId = null;
+    renderWizardHome();
+  });
+}
+
+function scrollHotspotIntoView(id){
+  try{
+    const el = layer.querySelector(`.hotspot[data-id="${CSS.escape(id)}"]`);
+    el?.scrollIntoView({ behavior: "smooth", block: "center", inline: "center" });
+  }catch(e){}
+}
+
 
 // Layer click (hotspots) + edit drag/resize (delegated)
 layer.addEventListener("click", (e) => {
